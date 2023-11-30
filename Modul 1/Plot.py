@@ -2,36 +2,43 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-data1 = pd.read_csv(
-    r'Espresso.csv', names=["SI","PGA","x", "y", "z"])
+# Hier einfach die Messwertdatei auswählen
+values = ['Tischwackeln']
+for value in values:
+    path = value + '.csv'
+    plot = value + 'rpmPlt.png'
+    data1 = pd.read_csv(
+        path, names=["SI", "PGA", "x", "y", "z", "time", "erdbeben"],
+        skiprows=1)
+    x = data1.x * 4 / 16383
+    y = data1.y * 4 / 16383
+    z = data1.z * 4 / 16383
+    acc = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    SI = data1.SI
+    PGA = data1.PGA
+    time = (data1.time - data1.time[0]) / 1000
+    erdbeben = data1.erdbeben
+    data = {'SI': SI, 'PGA': PGA, 'x': x, 'y': y, 'z': z, 'time': time,
+            'acc': acc,
+            'erdbeben': erdbeben}
+    df = pd.DataFrame(data)
+    df.set_index('time')
 
-length1 = int(len(data1.x)/2)
-list1 = [i for i in range(length1)]
-length2 = int(len(data1.y)/2)
-list2 = [i for i in range(length2)]
-length3 = int(len(data1.z)/2)
-list3 = [i for i in range(length3)]
-x = data1.x.iloc[:length1]*4/16383
-y = data1.y.iloc[:length2]*4/16383
-z = data1.z.iloc[:length3]*4/16383
-SI = data1.SI
-PGA = data1.PGA
-#data = {'x':x, 'y':y, 'z':z}
-data = {'SI':SI, 'PGA':PGA}
-df = pd.DataFrame(data)
+    # bei y = die nicht zu plottenden Werte raus nehmen
+    ax1 = df.plot(x='time', y=['acc', 'SI', 'PGA'],
+                  color=['green', 'red', 'blue'])
+    plt.title('Wackeln am Tisch', fontsize="24")
+    plt.xlabel('Zeit / s', fontsize="20")
+    plt.ylabel('Beschleunigung / m/s^2 // Grundgeschwindigkeit / m/s',
+               fontsize="20")
+    plt.xticks(fontsize="14")
+    plt.yticks(fontsize="14")
+    plt.legend(fontsize="20", loc='best')  # Display legend
 
-df.plot(style='o-', markersize=6, title='Betrieb einer Espressomaschine')
-
-plt.xlabel('Sample number')
-plt.ylabel('Beschleunigung / [m/s^2] // Grundgeschwindigkeit / [m/s]')
-
-plt.legend(loc='best')  # Display legend
-plt.show()
-#plt.plot(x, list1, label='x')
-#plt.hist(x, histtype=u'step', density=True, label='x')
-#plt.hist(y, histtype=u'step', density=True, label='y')
-#plt.hist(z, histtype=u'step', density=True, label='z')
-#plt.xlabel("Messwert Nr")
-#plt.ylabel("Beschleunigung /[m/s^2]")
-#plt.legend()
-#plt.show()
+    ax2 = ax1.twinx()
+    ax2.bar(df['time'], df['erdbeben'], color='yellow', alpha=0.03,
+            label='Erdbeben')
+    #manager = plt.get_current_fig_manager()
+    #manager.resize(*manager.window.maxsize())
+    plt.show()
+    #plt.savefig(plot)
